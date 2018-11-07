@@ -1,0 +1,3 @@
+[submodule "GossipHotAnalysis/ref"]
+	path = GossipHotAnalysis/ref
+	url = https://github.com/searobbersduck/bert_tf
