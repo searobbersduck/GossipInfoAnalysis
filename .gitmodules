@@ -1,3 +1,6 @@
 [submodule "GossipHotAnalysis/ref"]
 	path = GossipHotAnalysis/ref
 	url = https://github.com/searobbersduck/bert_tf
+[submodule "GossipHotAnalysis/corpus"]
+	path = GossipHotAnalysis/corpus
+	url = https://github.com/searobbersduck/my_nlp_corpus

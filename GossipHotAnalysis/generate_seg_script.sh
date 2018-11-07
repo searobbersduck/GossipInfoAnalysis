@@ -1,0 +1,4 @@
+spm_encode --model=./corpus/w2v/big_160k_spm.model --output_format=piece <./dataset/comment_titles/comment_part1_title.txt >./dataset/comment_titles_seg/comment_part1_title.txt
+spm_encode --model=./corpus/w2v/big_160k_spm.model --output_format=piece <./dataset/comment_titles/comment_part3_title.txt >./dataset/comment_titles_seg/comment_part3_title.txt
+spm_encode --model=./corpus/w2v/big_160k_spm.model --output_format=piece <./dataset/comment_titles/comment_part2_title.txt >./dataset/comment_titles_seg/comment_part2_title.txt
+spm_encode --model=./corpus/w2v/big_160k_spm.model --output_format=piece <./dataset/comment_titles/comment_part4_title.txt >./dataset/comment_titles_seg/comment_part4_title.txt
