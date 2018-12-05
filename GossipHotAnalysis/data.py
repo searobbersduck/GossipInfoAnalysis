@@ -5,6 +5,7 @@ import numpy as np
 import json
 from glob import glob
 import random
+import time
 
 import sys
 sys.path.append('./')
@@ -100,7 +101,9 @@ def test_merge_seg_titles_and_comment_num():
     comment_nums_filepattern = './dataset/comment_titles/comment_part*_comment_num.txt'
     outdir = './dataset/use_data'
     os.makedirs(outdir, exist_ok=True)
-    outfile = os.path.join(outdir, 'gossip_data.txt')
+    outfile_train = os.path.join(outdir, 'gossip_data_train.txt')
+    outfile_val = os.path.join(outdir, 'gossip_data_val.txt')
+    outfile_test = os.path.join(outdir, 'gossip_data_test.txt')
     titles = glob(title_filepattern)
     comment_nums = glob(comment_nums_filepattern)
     result_list = []
@@ -113,11 +116,29 @@ def test_merge_seg_titles_and_comment_num():
         num_max = max(num_max, num_max1)
         num_min = min(num_min, num_min1)
     str_list = []
+    flag_0_list = []
+    # num_max = 705
+    num_max = 705
+    num_min = 0
+    # for res in result_list:
+    #     res['score'] = (int(res['comment_num']) - num_min) / (num_max - num_min)
+    #     str_list.append(json.dumps(res, ensure_ascii=False))
     for res in result_list:
-        res['score'] = (int(res['comment_num']) - num_min) / (num_max - num_min)
+        res['score'] = (min(int(res['comment_num']), num_max) - num_min) / (num_max - num_min)
+        if (res['score'] < 0.1) and np.random.rand() < 0.8:
+            res['cls'] = 0
+            flag_0_list.append(json.dumps(res, ensure_ascii=False))
+            continue
+        res['cls'] = 0 if res['score'] < 0.1 else 1
         str_list.append(json.dumps(res, ensure_ascii=False))
-    with open(outfile, 'w', encoding='utf8') as f:
-        f.write('\n'.join(str_list))
+    split_num_train = int(len(str_list)*0.8)
+    split_num_val = int(len(str_list)*0.9)
+    with open(outfile_train, 'w', encoding='utf8') as f:
+        f.write('\n'.join(str_list[:split_num_train]))
+    with open(outfile_val, 'w', encoding='utf8') as f:
+        f.write('\n'.join(str_list[split_num_train:split_num_val]))
+    with open(outfile_test, 'w', encoding='utf8') as f:
+        f.write('\n'.join(str_list[split_num_val:]))
     print('hello world!')
 
 # 4. load data
@@ -143,13 +164,17 @@ def _get_batch(generator, vocab, batch_size, tokens_per_line):
         comment_nums_inputs = np.zeros(
             [batch_size], dtype=np.float32
         )
+        cls = np.zeros(
+            [batch_size], dtype=np.int32
+        )
         for i in range(batch_size):
             article = next(generator)
             title_tokens = vocab.encode(article['title'])
             cut_len = min(tokens_per_line, len(title_tokens))
             titles_inputs[i, :cut_len] = title_tokens[:cut_len]
             comment_nums_inputs[i] = article['score']
-        yield titles_inputs, comment_nums_inputs
+            cls[i] = article['cls']
+        yield titles_inputs, comment_nums_inputs, cls
 
 class GossipCommentNumberDataset(object):
     def __init__(self, filepattern,
@@ -219,12 +244,34 @@ def test_GossipCommentNumberDataset():
     for i in range(1000):
         X = ds.iter_batches(1, tokens_per_sent)
         Y = next(X)
-        print(Y[0])
-        print('hello world!')
+        print(Y[2])
+        time.sleep(1)
+        # print('hello world!')
+
+# 5. 查看评论数据分布
+def stat_comment_num(infile):
+    import matplotlib.pyplot as plt
+    comment_nums = []
+    with open(infile, 'r', encoding='utf8') as f:
+        for line in f.readlines():
+            line = line.strip()
+            if line is None or line == '':
+                continue
+            artitle = json.loads(line)
+            comment_nums.append(int(artitle['comment_num']))
+    comment_nums = np.array(comment_nums)
+    figure = plt.figure()
+    plt.hist(comment_nums, 100)
+    plt.show()
+
+def test_stat_comment_num():
+    infile = './dataset/use_data/gossip_data.txt'
+    stat_comment_num(infile)
 
 
 if __name__ == '__main__':
     # test_convert_gossip_json_to_txt()
     # generate_seg_script()
     test_merge_seg_titles_and_comment_num()
-    test_GossipCommentNumberDataset()
+    # test_GossipCommentNumberDataset()
+    # test_stat_comment_num()
